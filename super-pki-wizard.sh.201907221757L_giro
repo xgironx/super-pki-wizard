@@ -39,8 +39,8 @@ function    fn_init_defaults                #SETUP DEFAULTS
     LOCALITY="LAUREL"
     O="US Government"
     OU="DOD"
-    FILE_PASSWORD='password.txt'
-    PASSWORD_DATA=$(fn_gen_random_password)
+         PASSWORD=${fn_gen_random_password}
+    PASSWORD_DATA=${fn_gen_random_password}
     SSP="BRINYSTAND"
     EMAIL="jkgiron"
     EMAIL_ALIAS="brinystand_support@ic.gov"
@@ -48,16 +48,13 @@ function    fn_init_defaults                #SETUP DEFAULTS
 
 function    fn_lowercase_cn
 {
-           #unset ${DIR_OUT}
-           local  COMMON_NAME=${1}
-           #echo "_______________________"
-           #echo     ${CN}                                       '  --CN'
+           local      CN=${1}
+           echo "_______________________"
+           echo     ${CN}                                       '  --CN'
            #echo     ${CN}     | tr    '[:upper:]' '[:lower:]'
-                  #COMMON_NAME_LC=`${COMMON_NAME}    | tr    '[:upper:]' '[:lower:]'`
-            #echo ${COMMON_NAME}    | tr    '[:upper:]' '[:lower:]'
-            COMMON_NAME_LC=`echo ${COMMON_NAME}    | tr    '[:upper:]' '[:lower:]'`
-           #export COMMON_NAME_LC=${CN}     | tr    '[:upper:]' '[:lower:]'
-           echo ${COMMON_NAME_LC}
+                 #COMMON_NAME_LC=`$(${CN}     | tr    '[:upper:]' '[:lower:]')` 
+           export COMMON_NAME_LC=${CN}     | tr    '[:upper:]' '[:lower:]'
+           echo ${COMMON_NAME_LC}                               '  --COMMON_NAME_LC'
 }
 
 function    fn_set_filename_vars 
@@ -67,13 +64,11 @@ function    fn_set_filename_vars
         #   CN=${hostname}
         #   COMMON_NAME_LC=$(fn_lowercase_cn  ${COMMON_NAME})
 
-    # echo $CN                                                    '  --CN, at fn_set_filename_vars' 
-    #echo $COMMON_NAME                                            '  --COMMON_NAME, at fn_set_filename_vars' 
+    echo $CN                                                    '  --CN, at generate_filename_vars' 
     ENV_SCRIPT='super-pki-wizard-env.sh'
-    #PASSWORD='password.txt'
+    PASSWORD='password.txt'
         KEY_PRIVATE_ENCRYPTED=${COMMON_NAME_LC}.key-private-encrypted.pem
     KEY_PRIVATE_ENCRYPTED_NOT=${COMMON_NAME_LC}.key-private-encrypted-not.pem
-               KEY_PUBLIC_SSH=${COMMON_NAME_LC}.key-public-ssh.pem
 }
 
 function    fn_gen_random_password
@@ -82,8 +77,7 @@ function    fn_gen_random_password
     if  [ ${length}=="" ]; then
             length=32
     fi
-    LC_CTYPE=C tr -dc A-Za-z0-9_\!\@\#\$\%\^\&\*\(\)-+= < /dev/urandom | head -c 32 | xargs     #FOR MAC ONLY
-    #head /dev/urandom   | tr -dc A-Za-z0-9  | head -c ${length}                                #FOR MAC-NOTs
+    head /dev/urandom   | tr -dc A-Z0-9a-z  | head -c ${length}
 }
 
 function    fn_read_required
@@ -156,44 +150,39 @@ function    fn_read_optional
 
 function    fn_gen_key_private
 {
-    #echo "_______________________"
+    echo "_______________________"
     echo "  --inside fn_gen_key_private"
     echo   `pwd`                            '  --PWD'
+   #echo   ${DIR_OUT_PLUS_CERT_TTL}         '  --DIR_OUT_PLUS_CERT_TTL'
     echo   ${DIR_OUT}                       '  --DIR_OUT'
-    #openssl genrsa  -out        server201907221709/${KEY_PRIVATE_ENCRYPTED_NOT}  2048                                                     #GEN UNENCIPHERED  PRIVATE KEY    
-    #openssl genrsa  -out        $DIR_OUT/${KEY_PRIVATE_ENCRYPTED_NOT}  2048                                                               #GEN UNENCIPHERED  PRIVATE KEY    
-    openssl genrsa  -out        ${DIR_OUT}/${KEY_PRIVATE_ENCRYPTED_NOT}  2048                                                              #GEN UNENCIPHERED  PRIVATE KEY    
-    openssl rsa     -des3   -in ${DIR_OUT}/${KEY_PRIVATE_ENCRYPTED_NOT}        -out ${DIR_OUT}/${KEY_PRIVATE_ENCRYPTED}    -passout "file:${DIR_OUT}/${FILE_PASSWORD}"   #ENCIPHER          PRIVATE KEY
-    chmod 0600 ${DIR_OUT}/${KEY_PRIVATE_ENCRYPTED_NOT}
-    chmod 0600 ${DIR_OUT}/${KEY_PRIVATE_ENCRYPTED}
-   #openssl rsa     -des3   -in ${KEY_PRIVATE_ENCRYPTED_NOT}        -out ${KEY_PRIVATE_ENCRYPTED}    -passout "file:${DIR_OUT}/${FILE_PASSWORD}"   #ENCIPHER          PRIVATE KEY
+   #openssl genrsa  -out        ${DIR_OUT_PLUS_CERT_TTL}/${KEY_PRIVATE_ENCRYPTED_NOT}  2048                                                               #GEN UNENCIPHERED  PRIVATE KEY    
+    openssl genrsa  -out        ${KEY_PRIVATE_ENCRYPTED_NOT}  2048                                                               #GEN UNENCIPHERED  PRIVATE KEY    
+    openssl rsa     -des3   -in ${KEY_PRIVATE_ENCRYPTED_NOT}        -out ${KEY_PRIVATE_ENCRYPTED}    -passout "file:$PASSWORD"   #ENCIPHER          PRIVATE KEY
 }				
-
 
 function    fn_gen_key_public_ssh
 {
-    ssh-keygen  -f              ${DIR_OUT}/${KEY_PRIVATE_ENCRYPTED_NOT} -y  > ${DIR_OUT}/${KEY_PUBLIC_SSH}                                     #GEN KEY_PUBLIC_SSH   
-    chmod 0444                                                                ${DIR_OUT}/${KEY_PUBLIC_SSH}
+    ssh-keygen  -f         ${KEY_PRIVATE_ENCRYPTED_NOT} -y  > ${KEY_PUBLIC_SSH}     &&  chmod 0444                              #GEN KEY_PUBLIC_SSH    
 }	
-
 
 function    fn_mkdir_out
 {
-                                                                                   echo ${COMMON_NAME}
-                                                     FILENAME_PREFIX=$(fn_lowercase_cn  ${COMMON_NAME})
-                                              echo ${FILENAME_PREFIX}
-                                                    #FILENAME_PREFIX="${FILENAME_PREFIX/'*'/wildcard}"                         #REPLACE '*' WITH 'wildcard'
-                                          DIR_OUT="${FILENAME_PREFIX}-$((`date '+%Y'` + 3))"                                   #ADD 3 YEARS TO EXPIRY
+                                                                        FILENAME_PREFIX=$(fn_lowercase_cn  ${COMMON_NAME})
+                                                     FILENAME_PREFIX="${FILENAME_PREFIX/'*'/wildcard}"                         #REPLACE '*' WITH 'wildcard'
+                                          DIR_OUT="${FILENAME_PREFIX}.$((`date '+%Y'` + 3))"                                   #ADD 3 YEARS TO EXPIRY
     if  [[ -d                           ${DIR_OUT}      ]]; then
                     i=1
         while   [[ -d                   ${DIR_OUT}.$i   ]]; do
                 let i++
         done
-                                 #echo   ${DIR_OUT} '  --ECHO DIR_OUT inside IF LOOP'  
+                                 echo   ${DIR_OUT} '  --ECHO DIR_OUT inside IF LOOP'  
     fi
-                                 mkdir  ${DIR_OUT}
-                            chmod 0770  ${DIR_OUT}
                                  echo   `pwd`      '  --PWD'
+                                 echo   ${DIR_OUT} '  --ECHO DIR_OUT OUTSIDE IF LOOP'
+           export DIR_OUT_PLUS_CERT_TTL=${DIR_OUT}
+    echo        ${DIR_OUT_PLUS_CERT_TTL}           '  --ECHO DIR_OUT_PLUS_CERT_TTL'
+    mkdir       ${DIR_OUT_PLUS_CERT_TTL} && \
+    chmod 0770  ${DIR_OUT_PLUS_CERT_TTL}
 }	
 
 function    fn_gen_enviro_script
@@ -213,46 +202,38 @@ if  [ -r '\${DIR_PKI/password.txt' ]; then
     PKI_PASSWORD=\$(  cat '\${DIR_PKI}/password.txt'  )
 }
 EOF
-    chmod 0770 ${ENV_SCRIPT}
+    chmod 0444 ${ENV_SCRIPT}
 }
-
-
-function fn_record_password {
-    echo ${PASSWORD_DATA}   >   ${DIR_OUT}/${FILE_PASSWORD} 
-}
-
 
 function    fn_gen_key_and_csr
 {
     fn_init_defaults
     mkdir       requests && \
-    chmod 0770  requests
+    chmod 0700  requests
     while read COMMON_NAME; do
-                                #echo "_______________________"
-                                echo ${COMMON_NAME} '  --COMMON_NAME'
-            fn_set_filename_vars     ${COMMON_NAME}
-            fn_mkdir_out
-           #echo ${PASSWORD_DATA}                   '  --PASSWORD_DATA'
-            fn_record_password
-            #cat ${DIR_OUT}/password.txt
-            #echo "_______________________"
-            echo `pwd`                              '  --PWD'
-            #echo "_______________________"
-            echo ${DIR_OUT}                         '  --DIR_OUT'
-             #cd ${DIR_OUT}
-            #echo `pwd`                              '  --PWD'
-            # fn_gen_enviro_script
-            #echo "_______________________"
-            echo "NOW:  fn_gen_key_private"
-                        fn_gen_key_private
-            fn_gen_key_public_ssh
-            cd -
-            #echo "_______________________"
-            #echo `pwd`                              '  --PWD'
+                            echo "_______________________"
+                            echo ${COMMON_NAME} "  --COMMON_NAME"
+        fn_set_filename_vars     ${COMMON_NAME}
+        fn_mkdir_out
+        echo "_______________________"
+        echo `pwd`                              '  --PWD'
+        echo "_______________________"
+        echo ${DIR_OUT_PLUS_CERT_TTL}           '  --DIR_OUT_PLUS_CERT_TTL'
+                cd ${DIR_OUT_PLUS_CERT_TTL}
+        echo `pwd`                              '  --PWD'
+        # fn_gen_random_password
+        # fn_gen_enviro_script
+        echo "_______________________"
+        echo "NOW:  fn_gen_key_private"
+        fn_gen_key_private
+        # fn_gen_key_public_ssh
+        cd -
+        echo "_______________________"
+        echo `pwd`                              '  --PWD'
         done    < hostinfo.txt
 }
 
-#xumask 337                              #PROTECT GENERATED FILES
+umask 337                              #PROTECT GENERATED FILES
 CMD=${1}                               #PARSE CLI ARGS
 FILENAME=${2}
 if  [ ${CMD} == "gen_key_and_csr"  ]; then
@@ -260,3 +241,4 @@ if  [ ${CMD} == "gen_key_and_csr"  ]; then
 else
     >&2 echo -e 'ERROR:  Invalid Arg ${1}\n'
 fi
+

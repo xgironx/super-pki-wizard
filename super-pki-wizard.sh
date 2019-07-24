@@ -172,8 +172,9 @@ function    fn_gen_key_private
 
 function    fn_gen_key_public_ssh
 {
-    ssh-keygen  -f              ${DIR_OUT}/${KEY_PRIVATE_ENCRYPTED_NOT} -y  > ${DIR_OUT}/${KEY_PUBLIC_SSH}                                     #GEN KEY_PUBLIC_SSH   
-    chmod 0444                                                                ${DIR_OUT}/${KEY_PUBLIC_SSH}
+    rm -rf                                                                              ${DIR_OUT}/${KEY_PUBLIC_SSH}
+    ssh-keygen  -f              ${DIR_OUT}/${KEY_PRIVATE_ENCRYPTED_NOT} -y  -t rsa  >   ${DIR_OUT}/${KEY_PUBLIC_SSH}                     #GEN KEY_PUBLIC_SSH   
+    chmod 0444                                                                          ${DIR_OUT}/${KEY_PUBLIC_SSH}
 }	
 
 
@@ -224,36 +225,45 @@ function fn_record_password {
 
 function    fn_gen_key_and_csr
 {
+                                                            # IFS=$','
+    IFS=,
+                                                            # declare -a arraylist=(server201907231822L,domain.com,server201907231822L.domain.com,7.7.7.7,10.1.1.1,us@email.com,ssp201907231822L,saBob,saHenry)
     fn_init_defaults
     mkdir       requests && \
     chmod 0770  requests
-    while read COMMON_NAME; do
-                                #echo "_______________________"
-                                echo ${COMMON_NAME} '  --COMMON_NAME'
+    while read -a COMMON_NAME; do
+                                                            #echo "_______________________"
+                                                            #arraylistlength=${COMMON_NAME[@]}
+            for x in ${COMMON_NAME[@]}; do echo ${x}; done;
+                                                            # echo ${arraylistlength}
+                                                            # echo ${COMMON_NAME[0]} '  --COMMON_NAME'
+                                                            # echo ${COMMON_NAME[1]} '  --COMMON_NAME'
             fn_set_filename_vars     ${COMMON_NAME}
             fn_mkdir_out
-           #echo ${PASSWORD_DATA}                   '  --PASSWORD_DATA'
+                                                            #echo ${PASSWORD_DATA}                   '  --PASSWORD_DATA'
             fn_record_password
-            #cat ${DIR_OUT}/password.txt
-            #echo "_______________________"
-            echo `pwd`                              '  --PWD'
-            #echo "_______________________"
-            echo ${DIR_OUT}                         '  --DIR_OUT'
-             #cd ${DIR_OUT}
-            #echo `pwd`                              '  --PWD'
-            # fn_gen_enviro_script
-            #echo "_______________________"
+                                                            #cat ${DIR_OUT}/password.txt
+                                                            #echo "_______________________"
+            echo `pwd`                                      '  --PWD'
+                                                            #echo "_______________________"
+            echo ${DIR_OUT}                                 '  --DIR_OUT'
+                                                            #cd ${DIR_OUT}
+                                                            #echo `pwd`                              '  --PWD'
+                                                            # fn_gen_enviro_script
+                                                            #echo "_______________________"
             echo "NOW:  fn_gen_key_private"
                         fn_gen_key_private
             fn_gen_key_public_ssh
             cd -
-            #echo "_______________________"
-            #echo `pwd`                              '  --PWD'
-        done    < hostinfo.txt
+                                                            #echo "_______________________"
+                                                            #echo `pwd`                              '  --PWD'
+                                                    #done    < hostinfo.txt
+                                                    #done    <<< hostinfo.txt.array
+        done    < hostinfo.txt.array
 }
 
-#xumask 337                              #PROTECT GENERATED FILES
-CMD=${1}                               #PARSE CLI ARGS
+                                                            #umask 337                              #PROTECT GENERATED FILES
+CMD=${1}                                                    #PARSE CLI ARGS
 FILENAME=${2}
 if  [ ${CMD} == "gen_key_and_csr"  ]; then
     fn_gen_key_and_csr

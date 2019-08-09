@@ -76,7 +76,7 @@ function    fn_read_required
 {
     VAR_NAME=${1}
     PROMPT=${2}
-                REPLY=""
+                  REPLY=""
     while   [[ "${REPLY}==""" ]]; do
                 read -p "${PROMPT}:" REPLY
     done  
@@ -88,10 +88,17 @@ function    fn_read_optional
                VAR_NAME=${1}
     DEFAULT=${!VAR_NAME}
               PROMPT=${2}
+<<<<<<< HEAD
     read -p ${PROMPT}:    REPLY
                 if                 [ -n ${REPLY} ]; then
                     eval "${VAR_NAME}=\"${REPLY}\""
                 fi
+=======
+    read -p ${PROMPT}:           REPLY
+                       if [ -n ${REPLY} ]; then
+        eval    "${VAR_NAME}=\"${REPLY}\""
+    fi
+>>>>>>> master
 }
 
 

@@ -118,7 +118,7 @@ function    fn_mkdir_out
                                                      FILENAME_PREFIX=$(fn_lowercase_cn  ${COMMON_NAME})
                                               echo ${FILENAME_PREFIX}                                         
                                           #DIR_OUT="${FILENAME_PREFIX}-$((`date '+%Y'` + 3))"                        
-                                          DIR_OUT=${FILENAME_PREFIX}-$((`date '+%Y'` + 3))                      
+                                          DIR_OUT=output/${FILENAME_PREFIX}-$((`date '+%Y'` + 3))                      
     if  [[ -d                           ${DIR_OUT}      ]]; then
                     i=1
         while   [[ -d                   ${DIR_OUT}.$i   ]]; do
@@ -167,7 +167,7 @@ function    fn_gen_key_and_csr
                         fn_gen_key_private
                         fn_gen_key_public_ssh
 #           cd -                               
-        done    < hostinfo.txt.array
+        done    < input/hostinfo.txt.array
 }
 
                                                  
